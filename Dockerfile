@@ -1,38 +1,28 @@
 # ==========================
-#   BUILD STAGE
+#   BUILD STAGE (léger)
 # ==========================
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.9-eclipse-temurin-17-alpine AS build
 
 ENV SPRING_PROFILES_ACTIVE=build
-
-# Définir le répertoire de travail
 WORKDIR /app
 
-# Copier uniquement le pom.xml d'abord pour tirer parti du cache Docker
+# Copier le pom.xml et télécharger les dépendances
 COPY pom.xml .
+RUN mvn -B dependency:go-offline
 
-# Télécharger les dépendances Maven (sera mis en cache)
-RUN mvn dependency:go-offline -B
-
-# Copier le reste du code source
+# Copier le code source
 COPY src ./src
 
 # Compiler le projet (tests désactivés)
-RUN mvn clean package -Dspring.profiles.active=build -DskipTests
+RUN mvn -B clean package -Dspring.profiles.active=build -DskipTests
 
 # ==========================
-#   RUNTIME STAGE
+#   RUNTIME STAGE (très léger)
 # ==========================
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-alpine
 
-# Répertoire d'exécution
 WORKDIR /app
-
-# Copier le jar depuis la phase de build
 COPY --from=build /app/target/BackDeclitech-0.0.1-SNAPSHOT.jar app.jar
 
-# Exposer le port
 EXPOSE 8089
-
-# Lancer l’application
 ENTRYPOINT ["java", "-jar", "app.jar"]
