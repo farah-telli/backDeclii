@@ -1,15 +1,18 @@
 # ==========================
-#   BUILD STAGE (Maven + JDK 17)
+#   BUILD STAGE
 # ==========================
 FROM maven:3.8.4-openjdk-17-slim AS build
 
+# Profil Spring actif
 ENV SPRING_PROFILES_ACTIVE=build
+
+# Répertoire de travail
 WORKDIR /app
 
-# Copier uniquement le pom.xml pour utiliser le cache Docker
+# Copier uniquement le pom.xml pour exploiter le cache Docker
 COPY pom.xml .
 
-# Télécharger les dépendances Maven (pré-cache)
+# Pré-télécharger toutes les dépendances Maven
 RUN mvn -B dependency:go-offline \
     -Dmaven.wagon.http.ssl.insecure=true \
     -Dmaven.wagon.http.ssl.allowall=true
@@ -24,15 +27,17 @@ RUN mvn -B clean package -Dspring.profiles.active=build -DskipTests \
     -Dmaven.wagon.http.ssl.allowall=true
 
 # ==========================
-#   RUNTIME STAGE (ultra-léger)
+#   RUNTIME STAGE
 # ==========================
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Copier uniquement le jar final
+# Copier uniquement le jar final depuis la phase de build
 COPY --from=build /app/target/BackDeclitech-0.0.1-SNAPSHOT.jar app.jar
 
+# Exposer le port
 EXPOSE 8089
 
+# Lancer l'application
 ENTRYPOINT ["java", "-jar", "app.jar"]
