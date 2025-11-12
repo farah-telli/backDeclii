@@ -1,12 +1,12 @@
 # Build Stage
-FROM maven:3.8.4-openjdk-17-slim AS build
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 
 # Set active profile to 'build' to disable DB connection during tests
 ENV SPRING_PROFILES_ACTIVE=build
 
 # Copy source code and pom.xml into the container
-COPY src /BACKEND/src
-COPY pom.xml /BACKEND
+COPY src 
+COPY pom.xml
 
 # Build the project, skipping tests
 RUN mvn -f /BACKEND/pom.xml clean package -Dspring.profiles.active=build -DskipTests \
