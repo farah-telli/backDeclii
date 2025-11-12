@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   backend:
-    image: backend:1.0.0
+    image: farahtelli/backend:1.0.0
     container_name: backdeclitech
     ports:
       - "8089:8089"
