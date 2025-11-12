@@ -6,6 +6,7 @@ services:
     container_name: backdeclitech
     ports:
       - "8089:8089"
+    pull_policy: "never"   # Utilise l'image locale
     environment:
       SPRING_PROFILES_ACTIVE: build
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/declitech_db?createDatabaseIfNotExist=true
