@@ -6,12 +6,12 @@ services:
     container_name: backdeclitech
     ports:
       - "8089:8089"
-    pull_policy: "never"   # Utilise l'image locale
+    pull_policy: "never"
     environment:
       SPRING_PROFILES_ACTIVE: build
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/declitech_db?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ""        # mot de passe vide
+      SPRING_DATASOURCE_PASSWORD: ""
     depends_on:
       mysql:
         condition: service_healthy
@@ -21,9 +21,9 @@ services:
     image: mysql:8.0
     container_name: mysql-declitech
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"   # autorise le mot de passe vide (ONLY dev)
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: declitech_db
-      MYSQL_ROOT_HOST: '%'                 # permet connexions externes
+      MYSQL_ROOT_HOST: '%'
     ports:
       - "3306:3306"
     volumes:
@@ -35,5 +35,47 @@ services:
       retries: 10
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   mysql-data:
+
+configs:
+  prometheus_config:
+    content: |
+      global:
+        scrape_interval: 10s   # intervalle de collecte
+
+      scrape_configs:
+        # Supervision de Prometheus lui-même
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['prometheus:9090']
+
+        # Supervision de Jenkins
+        - job_name: 'jenkins'
+          metrics_path: '/prometheus'   # endpoint d'exportation des métriques Jenkins
+          static_configs:
+            - targets: ['192.168.50.4:8080']
