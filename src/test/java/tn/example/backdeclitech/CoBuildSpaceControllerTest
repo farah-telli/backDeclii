@@ -1,0 +1,111 @@
+package tn.example.backdeclitech;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+import org.springframework.http.ResponseEntity;
+import tn.example.backdeclitech.DTO.CoBuildSpaceDTO;
+import tn.example.backdeclitech.controllers.CoBuildSpaceController;
+import tn.example.backdeclitech.entities.CoBuildSpace;
+import tn.example.backdeclitech.services.CoBuildSpaceService;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class CoBuildSpaceControllerTest {
+    @InjectMocks
+    private CoBuildSpaceController controller;
+
+    @Mock
+    private CoBuildSpaceService service;
+
+    private CoBuildSpace space1;
+    private CoBuildSpace space2;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        space1 = new CoBuildSpace();
+        space1.setSpaceId(1L);
+        space1.setName("Space 1");
+        space1.setAddress("Address 1");
+        space1.setActif(true);
+
+        space2 = new CoBuildSpace();
+        space2.setSpaceId(2L);
+        space2.setName("Space 2");
+        space2.setAddress("Address 2");
+        space2.setActif(false);
+    }
+
+    @Test
+    void testCreate() {
+        when(service.save(space1)).thenReturn(space1);
+
+        ResponseEntity<CoBuildSpace> response = controller.create(space1);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(space1, response.getBody());
+
+        verify(service, times(1)).save(space1);
+    }
+
+    @Test
+    void testGetAll() {
+        when(service.getAll()).thenReturn(Arrays.asList(space1, space2));
+
+        ResponseEntity<List<CoBuildSpaceDTO>> response = controller.getAll();
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(2, response.getBody().size());
+        assertEquals("Space 1", response.getBody().get(0).getName());
+
+        verify(service, times(1)).getAll();
+    }
+
+    @Test
+    void testGetByIdFound() {
+        when(service.getById(1L)).thenReturn(space1);
+
+        ResponseEntity<CoBuildSpaceDTO> response = controller.getById(1L);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("Space 1", response.getBody().getName());
+    }
+
+    @Test
+    void testGetByIdNotFound() {
+        when(service.getById(99L)).thenReturn(null);
+
+        ResponseEntity<CoBuildSpaceDTO> response = controller.getById(99L);
+        assertEquals(404, response.getStatusCodeValue());
+    }
+
+    @Test
+    void testUpdateFound() {
+        when(service.update(1L, space1)).thenReturn(space1);
+
+        ResponseEntity<CoBuildSpace> response = controller.update(1L, space1);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(space1, response.getBody());
+    }
+
+    @Test
+    void testUpdateNotFound() {
+        when(service.update(99L, space1)).thenReturn(null);
+
+        ResponseEntity<CoBuildSpace> response = controller.update(99L, space1);
+        assertEquals(404, response.getStatusCodeValue());
+    }
+
+    @Test
+    void testDelete() {
+        doNothing().when(service).delete(1L);
+
+        ResponseEntity<Void> response = controller.delete(1L);
+        assertEquals(204, response.getStatusCodeValue());
+
+        verify(service, times(1)).delete(1L);
+    }
+}
